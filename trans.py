@@ -1,5 +1,5 @@
 
-# trans.js으로 전달될 가상의 데이터
+##파이썬=>자바스크립트 값 전달하기(이건 사실 뭐없음 print해주면됨)
 
 from konlpy.tag import Okt
 from tensorflow.keras.preprocessing.text import Tokenizer #노란색 줄 오류 무시해도 됨
