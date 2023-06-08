@@ -1,0 +1,1 @@
+yongjae_word/model/fasttext.model filter=lfs diff=lfs merge=lfs -text
