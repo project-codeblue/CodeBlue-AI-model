@@ -56,7 +56,7 @@ model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=
 # 모델 학습 (반복횟수:10, 한번에 처리할 데이터 샘플:32)
 model.fit(padded_sentences, labels, epochs=10, batch_size=32)
 
-# 새로운 환자 상태 입력
+# 환자 상태 입력
 new_text = "밤에 가슴이 답답하고 호흡이 어려움"
 
 # 입력 문장 전처리
