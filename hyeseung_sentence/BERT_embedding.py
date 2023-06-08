@@ -13,6 +13,8 @@ X_train, X_test, y_train, y_test = train_test_split(symptoms, labels, test_size=
 tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 
 # 입력 데이터를 BERT 입력 형식으로 변환하는 함수
+# 토큰 인코딩, 패딩 등 작업 수행됨
+# 토큰 출력해보고싶당
 def convert_examples_to_features(texts, labels, tokenizer):
     input_ids = []
     attention_masks = []
@@ -27,7 +29,10 @@ def convert_examples_to_features(texts, labels, tokenizer):
             return_tensors='tf'
         )
         input_ids.append(encoded['input_ids'][0]) 
-        attention_masks.append(encoded['attention_mask'][0])  
+        attention_masks.append(encoded['attention_mask'][0])
+
+        print("텍스트:", text)
+        print("인코딩된 토큰:", tokenizer.convert_ids_to_tokens(encoded['input_ids'][0]))  
 
     return tf.constant(input_ids), tf.constant(attention_masks), tf.constant(labels)  
 
@@ -48,10 +53,10 @@ outputs = tf.keras.layers.Dense(5, activation='softmax')(outputs)
 # 전체 모델 정의
 model = tf.keras.Model(inputs=[input_ids, attention_masks], outputs=outputs)
 
-# 모델 컴파일 (알고리즘:adam, 손실함수:categorical_crossentropy, 평가지표:accuracy)
+# 모델 컴파일 (알고리즘:adam, 손실함수:sparse_categorical_crossentrop, 평가지표:accuracy)
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-# 학습
+# 학습 (반복횟수:5, 배치크기:32)
 model.fit(
     [train_input_ids, train_attention_masks],
     train_labels,
@@ -71,3 +76,9 @@ sample_input_ids, sample_attention_masks, _ = convert_examples_to_features(sampl
 prediction = model.predict([sample_input_ids, sample_attention_masks])
 emergency_level = tf.argmax(prediction, axis=1).numpy()[0] + 1
 print("환자의 응급 정도:", emergency_level)
+
+
+# 학습리셋하는 방법
+# TensorFlow의 경우 tf.keras.Model의 initialize_weights 메서드를 사용하여 가중치를 초기화
+# tf.keras.optimizers.Optimizer의 get_weights 메서드를 사용하여 옵티마이저의 상태를 가져올 수 있고, 이를 set_weights 메서드를 사용하여 초기화
+# 학습 반복 횟수 초기화: 이전에 학습한 모델의 학습 반복 횟수를 초기화합니다. 즉, 에포크(epoch) 수를 0으로 설정하여 처음부터 학습을 시작
