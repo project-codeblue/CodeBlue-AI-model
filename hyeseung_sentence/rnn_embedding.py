@@ -5,19 +5,10 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
 import numpy as np
+from data import data
 
-# 증상 데이터
-symptoms = [
-    "밥을 먹다가 아랫입술이 경련이 난 것처럼 떨린다.",
-    "10분 정도 한 후에 괜찮아짐.",
-    "월요일 체력단련 후 명치가 아프면서 밤새 동안 구토, 구역질",
-    "교정하고 있는 상태."
-]
-
-# 응급 정도 레이블
-labels = [4, 2, 3, 1]  
-num_classes = 5
-encoded_labels = to_categorical(labels, num_classes=num_classes)
+# 데이터 분리
+symptoms, labels = zip(*data)
 
 # 텍스트 데이터 전처리
 tokenizer = Tokenizer()
@@ -29,7 +20,10 @@ num_words = len(word_index) + 1
 # 패딩
 max_length = max(len(seq) for seq in encoded_symptoms)
 padded_symptoms = pad_sequences(encoded_symptoms, maxlen=max_length, padding='post')
-print(padded_symptoms)
+
+# 응급 정도 레이블 전처리
+num_classes = 5
+encoded_labels = to_categorical(labels, num_classes=num_classes)
 
 # 학습 데이터와 테스트 데이터로 분리
 X_train, X_test, y_train, y_test = train_test_split(padded_symptoms, encoded_labels, test_size=0.2, random_state=42)
@@ -59,9 +53,3 @@ padded_sample = pad_sequences(encoded_sample, maxlen=max_length, padding='post')
 prediction = model.predict(padded_sample)
 emergency_level = np.argmax(prediction, axis=1) + 1
 print("환자의 응급 정도:", emergency_level)
-
-
-# 훈련데이터를 어떻게 모을것인가?
-
-# 응급도를 결정할 때 마다 훈련을 시켜야하는데 미리 모델을 저장할수는 없는 것인가? 
-# -> 로그인의 방식을 사용?
