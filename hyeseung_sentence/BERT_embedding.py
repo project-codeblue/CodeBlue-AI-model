@@ -4,7 +4,8 @@ from sklearn.model_selection import train_test_split
 from datas_BERT import data
 
 # 데이터 분리
-symptoms, labels = zip(*data)
+symptoms = [i[0] for i in data]
+labels = [i[1] for i in data]
 
 # 학습 데이터와 테스트 데이터로 분리
 X_train, X_test, y_train, y_test = train_test_split(symptoms, labels, test_size=0.2, random_state=42, stratify=labels)
