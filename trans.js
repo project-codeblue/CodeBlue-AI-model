@@ -1,3 +1,5 @@
+//파이썬=>자바스크립트 값 전달받기
+
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var child_process_1 = require("child_process");
