@@ -44,7 +44,7 @@ for text in tqdm(clean_texts,desc="Preprocessing"):
 model = Word2Vec(vector_size=100, window=5, min_count=4, workers=4, sg=1)
  # sg=0은 CBOW(Continuous Bag-of-Words) 알고리즘, sg=1은 Skip-gram 알고리즘 사용함
 model.build_vocab(ReToken_texts)
-model.train(ReToken_texts, total_examples=model.corpus_count, epochs=20000)#20000번 훈련
+model.train(ReToken_texts, total_examples=model.corpus_count, epochs=20000) #20000번 훈련
 
 #해당 단어와 유사한 값 확인
 similar_words = model.wv.most_similar("각혈") #현재 학습 데이터 자체가 각혈에 관한 유사데이터만 추출할 수 있도록 데이터로 학습되게끔 만듬
