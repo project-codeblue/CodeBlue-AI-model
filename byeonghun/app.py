@@ -8,14 +8,6 @@ from keras.models import load_model
 import numpy as np
 from datas import data
 
-# 훈련 데이터
-# texts = [
-#     "밥을 먹다가 아랫입술이 경련이 난 것처럼 떨린다.",
-#     "10분 정도 한 후에 괜찮아짐.",
-#     "월요일 체력단련 후 명치가 아프면서 밤새 동안 구토, 구역질",
-#     "교정하고 있는 상태."
-# ]
-
 # text = '''예전에도 오른쪽 머리 부분의 통증 병력(+)
 # 1DA 오른쪽 머리 뒷 부분의 통증 발생,
 # 콕콕 쑤시는 양상.
