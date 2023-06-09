@@ -4,8 +4,9 @@ from tensorflow.keras.layers import Embedding, LSTM, Dense
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
+from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler
 import numpy as np
-from data import data
+from datas import data
 
 # 데이터 분리
 symptoms, labels = zip(*data)
@@ -23,7 +24,7 @@ padded_symptoms = pad_sequences(encoded_symptoms, maxlen=max_length, padding='po
 
 # 응급 정도 레이블 전처리
 num_classes = 5
-encoded_labels = to_categorical(labels, num_classes=num_classes)
+encoded_labels = to_categorical(np.array(labels) - 1, num_classes=num_classes)
 
 # 학습 데이터와 테스트 데이터로 분리
 X_train, X_test, y_train, y_test = train_test_split(padded_symptoms, encoded_labels, test_size=0.2, random_state=42)
@@ -38,8 +39,22 @@ model.add(Dense(num_classes, activation='softmax'))
 # 모델 컴파일 (알고리즘:adam, 손실함수:categorical_crossentropy, 평가지표:accuracy)
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
+# 조기 종료 콜백 정의 (10번통안 검증손실이 개선되지 않으면 조기종료)
+early_stopping = EarlyStopping(patience=10, restore_best_weights=True)
+
+# 학습률 스케줄링 함수 정의
+def lr_scheduler(epoch, lr):
+    if epoch < 10:
+        return lr
+    else:
+        return lr * 0.1
+
+# 학습률 스케줄링 콜백 정의
+lr_scheduler_callback = LearningRateScheduler(lr_scheduler)
+
 # 학습 (반복횟수:10, 한번에 처리할 데이터 샘플:32)
-model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+model.fit(X_train, y_train, epochs=1000, batch_size=32, validation_data=(X_test, y_test),
+          callbacks=[early_stopping, lr_scheduler_callback])
 
 # 성능 평가
 loss, accuracy = model.evaluate(X_test, y_test)
