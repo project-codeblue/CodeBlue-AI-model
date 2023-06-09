@@ -33,7 +33,7 @@ def preprocess(line):
 if __name__ == '__main__':
     freeze_support()
 
-    with Pool(3) as pool:
+    with Pool(1) as pool:
        
         clean_texts_preprocess = pool.map(preprocess, data)
         clean_texts = [text for text in clean_texts_preprocess if text is not None]
@@ -42,9 +42,9 @@ if __name__ == '__main__':
             stopwords_removed_texts = [word for word in token_text if not word in stopwords]
             ReToken_texts.append(stopwords_removed_texts)
        
-    model = FastText(vector_size=80, window=5, min_count=4, workers=1, sg=1)
+    model = FastText(vector_size=80, window=5, min_count=4, workers=3, sg=1)
     model.build_vocab(ReToken_texts)
-    model.train(ReToken_texts, total_examples=model.corpus_count, epochs=100)
+    model.train(ReToken_texts, total_examples=model.corpus_count, epochs=1000)
 
     similar_words = model.wv.most_similar(answer)
     print(similar_words)
