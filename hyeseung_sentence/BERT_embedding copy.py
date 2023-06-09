@@ -1,7 +1,7 @@
 import tensorflow as tf
 from transformers import BertTokenizer, TFBertModel
 from sklearn.model_selection import train_test_split
-from data import data
+from datas_BERT import data
 
 # 데이터 분리
 symptoms, labels = zip(*data)
@@ -31,8 +31,8 @@ def convert_examples_to_features(texts, labels, tokenizer):
         input_ids.append(encoded['input_ids'][0]) 
         attention_masks.append(encoded['attention_mask'][0])
 
-        print("텍스트:", text)
-        print("인코딩된 토큰:", tokenizer.convert_ids_to_tokens(encoded['input_ids'][0]))  
+        # print("텍스트:", text)
+        # print("인코딩된 토큰:", tokenizer.convert_ids_to_tokens(encoded['input_ids'][0]))  
 
     return tf.constant(input_ids), tf.constant(attention_masks), tf.constant(labels)  
 
