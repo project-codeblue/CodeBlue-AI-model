@@ -29,10 +29,12 @@ def get_symptom_score(preprocessed_words, symptom_scores, fasttext_model):
             total_score += symptom_scores[word]
         else:
             similar_words = fasttext_model.wv.most_similar(positive=[word], topn=5)
+            print( similar_words)
             for sim_word, similarity in similar_words:
                 if sim_word in symptom_scores:
                     total_score += symptom_scores[sim_word] * similarity
                     break
+    print(total_score)
     return total_score
 
 fasttext_model = FastText.load("yongjae_word/model/fasttext.model")
