@@ -1,11 +1,13 @@
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.layers import Embedding, LSTM, Dense
+from tensorflow.keras.layers import Embedding, LSTM, Dense ,Dropout
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
+from tensorflow.keras.callbacks import Callback, LearningRateScheduler
+from tensorflow.keras import regularizers
 import numpy as np
-from data import data
+from datas import data
 
 # 데이터 분리
 symptoms, labels = zip(*data)
@@ -23,7 +25,7 @@ padded_symptoms = pad_sequences(encoded_symptoms, maxlen=max_length, padding='po
 
 # 응급 정도 레이블 전처리
 num_classes = 5
-encoded_labels = to_categorical(labels, num_classes=num_classes)
+encoded_labels = to_categorical(np.array(labels) - 1, num_classes=num_classes)
 
 # 학습 데이터와 테스트 데이터로 분리
 X_train, X_test, y_train, y_test = train_test_split(padded_symptoms, encoded_labels, test_size=0.2, random_state=42)
@@ -32,14 +34,57 @@ X_train, X_test, y_train, y_test = train_test_split(padded_symptoms, encoded_lab
 embedding_dim = 100
 model = Sequential()
 model.add(Embedding(num_words, embedding_dim, input_length=max_length))
-model.add(LSTM(128))
+model.add(LSTM(64))
+# model.add(LSTM(64, kernel_regularizer=regularizers.l1(0.01))) #L1 규제 적용.... 더 떨어짐ㅜ
+model.add(Dropout(0.2))
 model.add(Dense(num_classes, activation='softmax'))
 
 # 모델 컴파일 (알고리즘:adam, 손실함수:categorical_crossentropy, 평가지표:accuracy)
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-# 학습 (반복횟수:10, 한번에 처리할 데이터 샘플:32)
-model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+# 학습률 스케줄링 함수 정의 (100번동안은 학습률 유지 후 0.1씩 감소 -> 초기학습은 빠르게)
+def lr_scheduler(epoch, lr):
+    if epoch < 100:
+        return lr
+    else:
+        return lr * 0.1
+
+# 학습률 스케줄링 콜백 정의
+lr_scheduler_callback = LearningRateScheduler(lr_scheduler)
+
+class CustomEarlyStopping(Callback):
+    def __init__(self, accuracy_threshold=0.9, patience=30):
+        super(CustomEarlyStopping, self).__init__()
+        self.accuracy_threshold = accuracy_threshold
+        self.patience = patience
+        self.wait = 0
+        self.stopped_epoch = 0
+        self.best_weights = None
+
+    def on_epoch_end(self, epoch, logs=None):
+        current_accuracy = logs.get('accuracy')
+
+        if current_accuracy >= self.accuracy_threshold and self.wait >= self.patience:
+            self.stopped_epoch = epoch
+            self.model.stop_training = True
+            print(f"\n조기 종료: 정확도 {self.accuracy_threshold} 이상에 도달하고 {self.patience}번 동안 개선되지 않았습니다.")
+            print(f"{self.patience}번 이전의 모델 가중치로 복원합니다.")
+            self.model.set_weights(self.best_weights)
+
+        if current_accuracy is not None:
+            if self.best_weights is None or current_accuracy > self.best_accuracy:
+                self.best_weights = self.model.get_weights()
+                self.best_accuracy = current_accuracy
+                self.wait = 0
+            else:
+                self.wait += 1
+
+# 조기 종료 콜백 정의 (10번통안 검증손실이 개선되지 않으면 조기종료)
+custom_early_stopping = CustomEarlyStopping(accuracy_threshold=0.9, patience=30)
+
+# 학습 (반복횟수:1000, 한번에 처리할 데이터 샘플:32)
+model.fit(X_train, y_train, epochs=1000, batch_size=32, validation_data=(X_test, y_test),
+          callbacks=[custom_early_stopping, lr_scheduler_callback], verbose=1)
 
 # 성능 평가
 loss, accuracy = model.evaluate(X_test, y_test)

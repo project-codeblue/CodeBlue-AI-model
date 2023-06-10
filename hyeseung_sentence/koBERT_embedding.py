@@ -1,5 +1,5 @@
 import tensorflow as tf
-from transformers import BertTokenizer, TFBertModel
+from kobert_transformers import KoBertTokenizer, TFKoBertModel
 from sklearn.model_selection import train_test_split
 from datas_BERT import data
 
@@ -11,7 +11,7 @@ labels = [i[1] for i in data]
 X_train, X_test, y_train, y_test = train_test_split(symptoms, labels, test_size=0.2, random_state=42, stratify=labels)
 
 # BERT 토크나이저 로드
-tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+tokenizer = KoBertTokenizer.from_pretrained('monologg/kobert')
 
 # 입력 데이터를 BERT 입력 형식으로 변환하는 함수
 # 토큰 인코딩, 패딩 등 작업 수행됨
@@ -42,7 +42,7 @@ train_input_ids, train_attention_masks, train_labels = convert_examples_to_featu
 test_input_ids, test_attention_masks, test_labels = convert_examples_to_features(X_test, y_test, tokenizer)
 
 # BERT 모델 로드
-bert_model = TFBertModel.from_pretrained("bert-base-uncased")
+bert_model = TFKoBertModel.from_pretrained('monologg/kobert')
 
 # BERT 모델 구성
 input_ids = tf.keras.Input(shape=(128,), dtype=tf.int32)
