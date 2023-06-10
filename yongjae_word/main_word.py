@@ -7,8 +7,10 @@ from konlpy.tag import Okt
 from gensim.models import FastText
 from pykospacing import Spacing #pip install git+https://github.com/haven-jeon/PyKoSpacing.git
 from sub_word import symptom_scores, get_severity_level
+from scipy.spatial.distance import cosine
 import os
 import re
+import numpy as np
 
 okt = Okt()
 spacing = Spacing()
@@ -49,18 +51,26 @@ def preprocess(text):
 def get_symptom_score(preprocessed_words, symptom_scores, fasttext_model):
     total_score = 0
     for word in preprocessed_words:
-        print(f"분석될 단어===>${word}")
+        # print(f"분석될 단어===>${word}")
         if word in symptom_scores:
             total_score += symptom_scores[word]
         else:
-            similar_words = fasttext_model.wv.most_similar(positive=[word], topn=1)
-            # for sim_word, similarity in similar_words:
-            sim_word, similarity = similar_words[0]
-        similar_symptoms = [symptom for symptom in symptom_scores.keys() if similarity >= 0.85 and symptom in sim_word]
-        if similar_symptoms:
-            max_score = max(symptom_scores[symptom] for symptom in similar_symptoms)
-            total_score += max_score
-            break
+        #     similar_words = fasttext_model.wv.most_similar(positive=[word], topn=1)
+        #     # for sim_word, similarity in similar_words:
+        #     sim_word, similarity = similar_words[0]
+        #     print(word)
+        #     print(similar_words)
+        # similar_symptoms = [symptom for symptom in symptom_scores.keys() if similarity >= 0.8 and symptom in sim_word]
+        # if similar_symptoms:
+        #     max_score = max(symptom_scores[symptom] for symptom in similar_symptoms)
+        #     total_score += max_score
+        #     break
+            similarities = np.array([1 - cosine(fasttext_model.wv[word], fasttext_model.wv[symptom]) 
+                                     for symptom in symptom_scores.keys() if word in fasttext_model.wv])
+            max_similarity = similarities.max()
+            if max_similarity >= 0.93:
+                max_similar_symptom = list(symptom_scores.keys())[similarities.argmax()]
+                total_score += symptom_scores[max_similar_symptom]
     print(f"총 점수 ==> {total_score}")
     return total_score
 
