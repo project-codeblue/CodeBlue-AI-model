@@ -47,6 +47,6 @@ model.build_vocab(ReToken_texts)
 model.train(ReToken_texts, total_examples=model.corpus_count, epochs=20000)#20000번 훈련
 
 #해당 단어와 유사한 값 확인
-similar_words = model.wv.most_similar("각혈") #현재 학습 데이터 자체가 각혈에 관한 유사데이터만 추출할 수 있도록 데이터로 학습되게끔 만듬
+similar_words = model.wv.most_similar("알레르기") #현재 학습 데이터 자체가 각혈에 관한 유사데이터만 추출할 수 있도록 데이터로 학습되게끔 만듬
 for word, similarity in similar_words:
     print(word, similarity)
