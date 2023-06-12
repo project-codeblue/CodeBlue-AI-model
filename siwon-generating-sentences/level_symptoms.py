@@ -312,7 +312,5 @@ child_symptoms = [
     ['호흡기', '과다호흡증후군']
 ]
 
-sorted = sorted(adult_symptoms) # 150
-for i in sorted:
-    print(i)
+# print(len(adult_symptoms)) # 150
 # print(len(child_symptoms)) # 158
