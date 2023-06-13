@@ -32,8 +32,8 @@ for line in data:
         clean_texts.append(line)
 
 # 전처리 2 : 단어 바르게 변환, None값 제외, 불용어 제거
-for text in tqdm(clean_texts,desc="Preprocessing"):
-# for text in clean_texts :
+# for text in tqdm(clean_texts,desc="Preprocessing"):
+for text in clean_texts :
     # spelled_text = spell_checker.check(text)
     tokenized_sentence = okt.morphs(text, stem=True)
     stopwords_removed_texts = [word for word in tokenized_sentence if not word in stopwords] # 불용어 제거
