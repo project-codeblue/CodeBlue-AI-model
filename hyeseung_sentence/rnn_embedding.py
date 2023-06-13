@@ -34,7 +34,7 @@ X_train, X_test, y_train, y_test = train_test_split(padded_symptoms, encoded_lab
 embedding_dim = 100
 model = Sequential()
 model.add(Embedding(num_words, embedding_dim, input_length=max_length))
-model.add(LSTM(64))
+model.add(LSTM(46))
 # model.add(LSTM(64, kernel_regularizer=regularizers.l1(0.01))) #L1 규제 적용.... 더 떨어짐ㅜ
 model.add(Dropout(0.2))
 model.add(Dense(num_classes, activation='softmax'))
@@ -53,13 +53,13 @@ def lr_scheduler(epoch, lr):
 lr_scheduler_callback = LearningRateScheduler(lr_scheduler)
 
 class CustomEarlyStopping(Callback):
-    def __init__(self, accuracy_threshold=0.9, patience=30):
+    def __init__(self, accuracy_threshold=0.95, patience=30):
         super(CustomEarlyStopping, self).__init__()
         self.accuracy_threshold = accuracy_threshold
         self.patience = patience
-        self.wait = 0
-        self.stopped_epoch = 0
-        self.best_weights = None
+        self.wait = 0 # 개선 없는 횟수 세기
+        self.stopped_epoch = 0 # 종료 에포크 번호
+        self.best_weights = None # 최적 가중치 저장
 
     def on_epoch_end(self, epoch, logs=None):
         current_accuracy = logs.get('accuracy')
@@ -80,7 +80,7 @@ class CustomEarlyStopping(Callback):
                 self.wait += 1
 
 # 조기 종료 콜백 정의 (10번통안 검증손실이 개선되지 않으면 조기종료)
-custom_early_stopping = CustomEarlyStopping(accuracy_threshold=0.9, patience=30)
+custom_early_stopping = CustomEarlyStopping(accuracy_threshold=0.95, patience=30)
 
 # 학습 (반복횟수:1000, 한번에 처리할 데이터 샘플:32)
 model.fit(X_train, y_train, epochs=1000, batch_size=32, validation_data=(X_test, y_test),
