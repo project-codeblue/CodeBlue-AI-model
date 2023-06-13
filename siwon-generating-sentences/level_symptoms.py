@@ -74,6 +74,9 @@ adult_symptoms = [
     ['일반', '비정상 검사수치'],
     ['호흡기', '호흡기 이물질'],
     ['소화기', '혈변/흑색변'],
+]
+
+additional = [
     ['산부인과', '질통증/가려움'],
     ['귀질환', '청력상실'],
     ['산부인과', '성폭행'],
@@ -314,3 +317,7 @@ child_symptoms = [
 
 # print(len(adult_symptoms)) # 150
 # print(len(child_symptoms)) # 158
+
+sorted_arr = sorted(adult_symptoms)
+for i in range(len(sorted_arr)):
+    print(sorted_arr[i][0], "\n")
