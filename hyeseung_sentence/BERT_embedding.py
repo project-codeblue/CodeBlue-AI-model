@@ -35,7 +35,7 @@ def convert_examples_to_features(texts, labels, tokenizer):
         # print("텍스트:", text)
         # print("인코딩된 토큰:", tokenizer.convert_ids_to_tokens(encoded['input_ids'][0]))  
 
-    return tf.constant(input_ids), tf.constant(attention_masks), tf.constant(labels)  
+    return tf.stack(input_ids), tf.stack(attention_masks), tf.constant(labels) 
 
 # 데이터를 BERT 입력 형식으로 변환
 train_input_ids, train_attention_masks, train_labels = convert_examples_to_features(X_train, y_train, tokenizer)
@@ -54,7 +54,7 @@ outputs = tf.keras.layers.Dense(5, activation='softmax')(outputs)
 # 전체 모델 정의
 model = tf.keras.Model(inputs=[input_ids, attention_masks], outputs=outputs)
 
-# 모델 컴파일 (알고리즘:adam, 손실함수:sparse_categorical_crossentrop, 평가지표:accuracy)
+# 모델 컴파일 (알고리즘:adam, 손실함수:sparse_categorical_crossentropy, 평가지표:accuracy)
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 # 학습 (반복횟수:5, 배치크기:32)
