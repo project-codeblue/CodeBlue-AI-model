@@ -92,6 +92,6 @@ def main():
     model = KeyedVectors.load(model_path)
     model.wv.vectors_ngrams = np.load(vectors_ngrams_path, allow_pickle=False)
 
-##스위치
-if __name__ == '__main__':
-    main()
+# ##스위치
+# if __name__ == '__main__':
+#     main()
