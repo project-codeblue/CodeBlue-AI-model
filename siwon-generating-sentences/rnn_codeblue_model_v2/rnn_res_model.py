@@ -153,7 +153,6 @@ def emergency_level_prediction(sample_sentence):
     # 샘플 문장 응급도 예상
     prediction = model.predict(padded_sample)
     emergency_level = np.argmax(prediction, axis=1) + 1
-    print("환자의 응급 정도:", emergency_level)
 
 
 # 예시 문장
