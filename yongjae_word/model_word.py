@@ -1,6 +1,6 @@
 # -- coding: utf-8 --
 # ↑상단의 주석 지우지 마세요. python이 읽는 주석입니다.
-import time
+
 from konlpy.tag import Okt
 from multiprocessing import freeze_support
 from gensim.models.fasttext import FastText
@@ -8,15 +8,11 @@ import re
 from gensim.models import KeyedVectors
 import numpy as np
 from tqdm import tqdm
-import random
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from stop_word import stop_words,compound_words
 
 okt = Okt()
-#stopwords파일 따로 생성하기
-ReToken_texts = []
-clean_texts = []
 
 #절대 경로 정리
 model_path = "yongjae_word/model/fasttext.model"
@@ -36,7 +32,6 @@ def preprocess(data):
     return ReToken_texts
 
 #모델 초기화 & 초기 학습용
-
 def train_fasttext_model(texts):
     print("-" * 20)
     print("학습 시작")

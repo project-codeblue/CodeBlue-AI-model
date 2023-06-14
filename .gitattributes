@@ -1,6 +1,2 @@
-yongjae_word/model/fasttext.model filter=lfs diff=lfs merge=lfs -text
-yongjae_word/model/fasttext.model.wv.vectors_ngrams.npy filter=lfs diff=lfs merge=lfs -text
-fasttext.model filter=lfs diff=lfs merge=lfs -text
-fasttext.model.wv.vectors_ngrams.npy filter=lfs diff=lfs merge=lfs -text
-*.model !text !filter !merge !diff
-*.npy !text !filter !merge !diff
+*.model filter=lfs diff=lfs merge=lfs -text
+*.npy filter=lfs diff=lfs merge=lfs -text
