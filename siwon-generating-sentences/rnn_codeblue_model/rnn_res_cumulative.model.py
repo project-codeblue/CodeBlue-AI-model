@@ -68,20 +68,11 @@ encoded_labels = to_categorical(np.array(labels) - 1, num_classes=num_classes)
 X_train, X_test, y_train, y_test = train_test_split(padded_symptoms, encoded_labels, test_size=0.2, random_state=42)
 
 
-# # 기존 모델 불러오기
-# # model = load_model('rnn_codeblue_model.h5')
+# 기존 모델 불러오기
+model = load_model('rnn_codeblue_model.h5')
 
 
-# RNN 모델 구성 (100차원, 활성화 함수:softmax - 다중 클래스 분류에 사용)
-embedding_dim = 100
-hidden_unit = 128 # hidden layer: 조정 대상
-model = Sequential()
-model.add(Embedding(num_words, embedding_dim, input_length=max_length))
-model.add(LSTM(hidden_unit))
-model.add(Dropout(0.2)) # dropout - 과적합 방지: 조정 대상
-model.add(Dense(num_classes, activation='softmax'))
-
-
+# 조기 종료 콜백 정의
 class CustomEarlyStopping(Callback):
     def __init__(self, accuracy_threshold=0.95, patience=30):
         super(CustomEarlyStopping, self).__init__()
@@ -92,24 +83,24 @@ class CustomEarlyStopping(Callback):
         self.best_weights = None # 최적 가중치 저장
 
     def on_epoch_end(self, epoch, logs=None):
-        current_accuracy = logs.get('accuracy')
+        current_test_accuracy = logs.get('val_accuracy')
 
-        if current_accuracy >= self.accuracy_threshold and self.wait >= self.patience:
+        if current_test_accuracy >= self.accuracy_threshold and self.wait >= self.patience:
             self.stopped_epoch = epoch
             self.model.stop_training = True
             print(f"\n조기 종료: 정확도 {self.accuracy_threshold} 이상에 도달하고 {self.patience}번 동안 개선되지 않았습니다.")
             print(f"{self.patience}번 이전의 모델 가중치로 복원합니다.")
             self.model.set_weights(self.best_weights)
 
-        if current_accuracy is not None:
-            if self.best_weights is None or current_accuracy > self.best_accuracy:
+        if current_test_accuracy is not None:
+            if self.best_weights is None or current_test_accuracy > self.best_accuracy:
                 self.best_weights = self.model.get_weights()
-                self.best_accuracy = current_accuracy
+                self.best_accuracy = current_test_accuracy
                 self.wait = 0
             else:
                 self.wait += 1
 
-# 조기 종료 콜백 정의 (10번동안 검증손실이 개선되지 않으면 조기종료)
+### 조기 종료 콜백 사용 (30번 동안 검증손실이 개선되지 않으면 조기종료)
 es = CustomEarlyStopping(accuracy_threshold=0.95, patience=30)
 
 # 모델 체크포인트 - ModelCheckpoint를 사용하여 검증 데이터의 정확도(val_acc)가 이전보다 좋아질 경우에만 모델을 저장
@@ -121,8 +112,8 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accur
 
 
 # 학습 (반복횟수:1000, 한번에 처리할 데이터 샘플:32)
-model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test), # epochs: 조정 대상
-          callbacks=[es, mc, tensorboard_callback], verbose=1) # mc 추가
+model.fit(X_train, y_train, epochs=1000, batch_size=64, validation_data=(X_test, y_test), # epochs: 조정 대상
+          callbacks=[es, mc, tensorboard_callback], verbose=1)
 
 
 # 토크나이저 저장
