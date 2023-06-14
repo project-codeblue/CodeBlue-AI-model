@@ -9,7 +9,7 @@ from tensorflow.keras import regularizers
 from tensorflow.keras.callbacks import TensorBoard
 import numpy as np
 import random
-from third_data import data
+from res_symptoms_data import data
 
 # TensorBoard 로그 저장 디렉토리 설정
 log_dir = "logs"
