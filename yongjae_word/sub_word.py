@@ -52,6 +52,6 @@ def get_severity_level(score):
     elif score > 40:
         return "level 3"
     elif score > 20:
-        return "level 4 "
+        return "level 4"
     else:
         return "level 5"

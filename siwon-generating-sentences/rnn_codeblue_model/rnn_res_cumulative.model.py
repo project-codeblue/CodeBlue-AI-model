@@ -11,7 +11,7 @@ import numpy as np
 import random, urllib.request, pandas as pd, pickle, re
 from konlpy.tag import Okt
 import matplotlib.pyplot as plt
-from res_symptoms_data import data
+from new_res_symptoms_data import data
 
 # TensorBoard 
 ### TensorBoard 로그 저장 디렉토리 설정
@@ -34,7 +34,7 @@ symptoms_before_tuning, labels = zip(*data)
 
 
 # 토큰화
-stopwords = [',','.','의','로','을','가','이','은','들','는','성','좀','잘','걍','과','고','도','되','되어','되다','를','으로','자','에','와','한','합니다','니다','하다','임','음','환자','응급','상황','상태','증상','증세','구조']
+stopwords = [',','.','의','로','을','가','이','은','들','는','성','좀','잘','걍','과','고','도','되','되어','되다','를','으로','자','에','와','한','합니다','입니다','있습니다','니다','하다','임','음','환자','응급','상황','상태','증상','증세','구조']
 okt = Okt()
 
 ### 토크나이저 저장 경로
@@ -56,8 +56,8 @@ num_words = len(word_index) + 1
 
 # 패딩
 max_length = max(len(seq) for seq in symptoms)
-padded_symptoms = pad_sequences(encoded_symptoms, maxlen=max_length, padding='post')
-
+MAX_LEN = 30
+padded_symptoms = pad_sequences(encoded_symptoms, maxlen=MAX_LEN, padding='post')
 
 # 응급 정도 레이블 전처리
 num_classes = 5
@@ -66,7 +66,6 @@ encoded_labels = to_categorical(np.array(labels) - 1, num_classes=num_classes)
 
 # 학습 데이터와 테스트 데이터로 분리
 X_train, X_test, y_train, y_test = train_test_split(padded_symptoms, encoded_labels, test_size=0.2, random_state=42)
-
 
 # 기존 모델 불러오기
 model = load_model('rnn_codeblue_model.h5')
@@ -78,24 +77,26 @@ class CustomEarlyStopping(Callback):
         super(CustomEarlyStopping, self).__init__()
         self.accuracy_threshold = accuracy_threshold
         self.patience = patience
-        self.wait = 0 # 개선 없는 횟수 세기
-        self.stopped_epoch = 0 # 종료 에포크 번호
-        self.best_weights = None # 최적 가중치 저장
+        self.wait = 0  # 개선 없는 횟수 세기
+        self.stopped_epoch = 0  # 종료 에포크 번호
+        self.best_weights = None  # 최적 가중치 저장
+        self.best_val_loss = float('inf')  # 최적의 검증 손실 초기화
 
     def on_epoch_end(self, epoch, logs=None):
-        current_test_accuracy = logs.get('val_accuracy')
+        current_accuracy = logs.get('accuracy')
+        current_val_loss = logs.get('val_loss')
 
-        if current_test_accuracy >= self.accuracy_threshold and self.wait >= self.patience:
+        if current_accuracy >= self.accuracy_threshold and self.wait >= self.patience:
             self.stopped_epoch = epoch
             self.model.stop_training = True
-            print(f"\n조기 종료: 정확도 {self.accuracy_threshold} 이상에 도달하고 {self.patience}번 동안 개선되지 않았습니다.")
+            print(f"\n조기 종료: 정확도 {self.accuracy_threshold} 이상에 도달하고 {self.patience}번 동안 검증 손실이 개선되지 않았습니다.")
             print(f"{self.patience}번 이전의 모델 가중치로 복원합니다.")
             self.model.set_weights(self.best_weights)
 
-        if current_test_accuracy is not None:
-            if self.best_weights is None or current_test_accuracy > self.best_accuracy:
+        if current_val_loss is not None:
+            if current_val_loss < self.best_val_loss:
                 self.best_weights = self.model.get_weights()
-                self.best_accuracy = current_test_accuracy
+                self.best_val_loss = current_val_loss
                 self.wait = 0
             else:
                 self.wait += 1
@@ -103,8 +104,8 @@ class CustomEarlyStopping(Callback):
 ### 조기 종료 콜백 사용 (30번 동안 검증손실이 개선되지 않으면 조기종료)
 es = CustomEarlyStopping(accuracy_threshold=0.95, patience=30)
 
-# 모델 체크포인트 - ModelCheckpoint를 사용하여 검증 데이터의 정확도(val_acc)가 이전보다 좋아질 경우에만 모델을 저장
-mc = ModelCheckpoint('rnn_codeblue_model.h5', monitor='val_acc', mode='max', verbose=1, save_best_only=True)
+# 모델 체크포인트 - ModelCheckpoint를 사용하여 검증 데이터의 정확도(val_accuracy)가 이전보다 좋아질 경우에만 모델을 저장
+mc = ModelCheckpoint('rnn_codeblue_model.h5', monitor='val_accuracy', mode='max', verbose=1, save_best_only=True)
 
 
 # 모델 컴파일 (알고리즘:adam, 손실함수:categorical_crossentropy, 평가지표:accuracy)
@@ -112,8 +113,8 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accur
 
 
 # 학습 (반복횟수:1000, 한번에 처리할 데이터 샘플:32)
-model.fit(X_train, y_train, epochs=1000, batch_size=64, validation_data=(X_test, y_test), # epochs: 조정 대상
-          callbacks=[es, mc, tensorboard_callback], verbose=1)
+model.fit(X_train, y_train, epochs=100, batch_size=64, validation_data=(X_test, y_test), # epochs: 조정 대상
+          callbacks=[es, mc, tensorboard_callback], verbose=1) 
 
 
 # 토크나이저 저장
@@ -140,7 +141,7 @@ def emergency_level_prediction(sample_sentence):
     sample_sentence = [word for word in sample_sentence if not word in stopwords] # 불용어 제거
     # 샘플 문장을 토큰화하고 패딩
     encoded_sample = tokenizer.texts_to_sequences([sample_sentence])
-    padded_sample = pad_sequences(encoded_sample, maxlen=max_length, padding='post')
+    padded_sample = pad_sequences(encoded_sample, maxlen=MAX_LEN, padding='post')
     # 샘플 문장 응급도 예상
     prediction = model.predict(padded_sample)
     emergency_level = np.argmax(prediction, axis=1) + 1
