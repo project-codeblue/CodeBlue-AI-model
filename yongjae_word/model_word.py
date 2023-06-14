@@ -78,6 +78,7 @@ def update_fasttext_model(texts):
     print("모델 업데이트가 완료되었습니다.")
     print("-" * 20)
 
+
 # ##그래프화
 # def visualize_similarity(model):
 #     word_list = list(model.wv.key_to_index)
