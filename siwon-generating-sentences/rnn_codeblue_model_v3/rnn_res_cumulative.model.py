@@ -11,7 +11,7 @@ import numpy as np
 import random, urllib.request, pandas as pd, pickle, re
 from konlpy.tag import Okt
 import matplotlib.pyplot as plt
-from new_res_symptoms_data import data
+from dataset_second import data
 
 # TensorBoard 
 ### TensorBoard 로그 저장 디렉토리 설정
@@ -31,10 +31,10 @@ data = [item for item in data if item[0] not in seen_values and not seen_values.
 
 ### 데이터 분리
 symptoms_before_tuning, labels = zip(*data)
-print("TOTAL_DATASET: ", len(symptoms_before_tuning))
+
 
 # 토큰화
-stopwords = [',','.','의','로','을','가','이','은','들','는','성','좀','잘','걍','과','고','도','되','되어','되다','를','으로','자','에','와','한','합니다','니다','하다','임','음','환자','응급','상황','상태','증상','증세','구조']
+stopwords = [',','.','의','로','을','가','이','은','들','는','성','좀','잘','걍','과','고','도','되','되어','되다','를','으로','자','에','와','한','합니다','입니다','있습니다','니다','하다','임','음','환자','응급','상황','상태','증상','증세','구조']
 okt = Okt()
 
 ### 토크나이저 저장 경로
@@ -54,10 +54,11 @@ encoded_symptoms = tokenizer.texts_to_sequences(symptoms)
 word_index = tokenizer.word_index
 num_words = len(word_index) + 1
 
+
 # 패딩
 max_length = max(len(seq) for seq in symptoms)
-padded_symptoms = pad_sequences(encoded_symptoms, maxlen=max_length, padding='post')
-print("MAX_LEN: ", max_length)
+MAX_LEN = 16
+padded_symptoms = pad_sequences(encoded_symptoms, maxlen=MAX_LEN, padding='post')
 
 
 # 응급 정도 레이블 전처리
@@ -69,20 +70,11 @@ encoded_labels = to_categorical(np.array(labels) - 1, num_classes=num_classes)
 X_train, X_test, y_train, y_test = train_test_split(padded_symptoms, encoded_labels, test_size=0.2, random_state=42)
 
 
-# # 기존 모델 불러오기
-# # model = load_model('rnn_codeblue_model.h5')
+# 기존 모델 불러오기
+model = load_model('rnn_codeblue_model.h5')
 
 
-# RNN 모델 구성 (100차원, 활성화 함수:softmax - 다중 클래스 분류에 사용)
-embedding_dim = 100
-hidden_unit = 128 # hidden layer: 조정 대상
-model = Sequential()
-model.add(Embedding(num_words, embedding_dim, input_length=max_length))
-model.add(LSTM(hidden_unit))
-model.add(Dropout(0.5)) # dropout - 과적합 방지: 조정 대상
-model.add(Dense(num_classes, activation='softmax'))
-
-
+# 조기 종료 콜백 정의
 class CustomEarlyStopping(Callback):
     def __init__(self, accuracy_threshold=0.95, patience=30):
         super(CustomEarlyStopping, self).__init__()
@@ -112,8 +104,12 @@ class CustomEarlyStopping(Callback):
             else:
                 self.wait += 1
 
-# 조기 종료 콜백 정의 (10번동안 검증손실이 개선되지 않으면 조기종료)
+### 조기 종료 콜백 사용 (30번 동안 검증손실이 개선되지 않으면 조기종료)
 es = CustomEarlyStopping(accuracy_threshold=0.95, patience=30)
+
+
+# 모델 체크포인트 - ModelCheckpoint를 사용하여 검증 데이터의 정확도(val_accuracy)가 이전보다 좋아질 경우에만 모델을 저장
+mc = ModelCheckpoint('rnn_codeblue_model.h5', monitor='val_accuracy', mode='max', verbose=1, save_best_only=True)
 
 
 # 모델 컴파일 (알고리즘:adam, 손실함수:categorical_crossentropy, 평가지표:accuracy)
@@ -121,16 +117,17 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accur
 
 
 # 학습 (반복횟수:1000, 한번에 처리할 데이터 샘플:32)
-model.fit(X_train, y_train, epochs=500, batch_size=64, validation_data=(X_test, y_test), # epochs: 조정 대상
-          callbacks=[es, tensorboard_callback], verbose=1) # mc 추가
+model.fit(X_train, y_train, epochs=100, batch_size=64, validation_data=(X_test, y_test), # epochs: 조정 대상
+          callbacks=[es, mc, tensorboard_callback], verbose=1) 
 
 
 # 토크나이저 저장
 with open(tokenizer_path, 'wb') as f:
     pickle.dump(tokenizer, f)
 
+
 # 성능 평가
-# loaded_model = load_model('rnn_codeblue_model.h5')
+loaded_model = load_model('rnn_codeblue_model.h5')
 loss, accuracy = model.evaluate(X_test, y_test)
 print("테스트 손실:", loss)
 print("테스트 정확도:", accuracy)
@@ -149,19 +146,19 @@ def emergency_level_prediction(sample_sentence):
     sample_sentence = [word for word in sample_sentence if not word in stopwords] # 불용어 제거
     # 샘플 문장을 토큰화하고 패딩
     encoded_sample = tokenizer.texts_to_sequences([sample_sentence])
-    padded_sample = pad_sequences(encoded_sample, maxlen=max_length, padding='post')
+    padded_sample = pad_sequences(encoded_sample, maxlen=MAX_LEN, padding='post')
     # 샘플 문장 응급도 예상
     prediction = model.predict(padded_sample)
     emergency_level = np.argmax(prediction, axis=1) + 1
-    print(f"응급도: {emergency_level[0]}")
+    print("환자의 응급 정도:", emergency_level)
 
 
 # 예시 문장
-emergency_level_prediction("지금 환자는 흉부나 목에 찰과상이 있어서, 호흡이 어려운 상황입니다.") # 1
-emergency_level_prediction("지금 환자가 숨을 들이마실 때 산소 부족때문에 어지러워하고 있습니다") # 2
-emergency_level_prediction("피부 발진이랑 기침, 숨 가쁨, 목에 불편감.") # 3
-emergency_level_prediction("환자는 코막힘과 비염으로 인해 숨쉬기 어려워하고 있음") # 4
-emergency_level_prediction("숨을 들이마실 때 약간의 힘들어하고 있다.") # 5
+emergency_level_prediction("응급환자는 심장마비로 인해 의식을 잃고 쓰러졌습니다. 호흡 곤란 상태입니다.") # 1
+emergency_level_prediction("지금 환자의 혈액 순환이 장애가 생겼습니다. 환자는 혈류가 약해져 무기력한 상태입니다.") # 2
+emergency_level_prediction("환자의 맥박수가 매우 높은것으로 판단됌. 정상적인 맥박이 아님") # 3
+emergency_level_prediction("배뇨 장애를 가진 환자가 탑승. 요로감염으로 의심됌") # 4
+emergency_level_prediction("설사로 인한 복통과 탈수 증상") # 5
 
 # 모델 저장
-model.save('rnn_codeblue_model.h5')
+# model.save('rnn_codeblue_model.h5')

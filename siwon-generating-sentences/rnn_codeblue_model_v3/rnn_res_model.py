@@ -11,7 +11,7 @@ import numpy as np
 import random, urllib.request, pandas as pd, pickle, re
 from konlpy.tag import Okt
 import matplotlib.pyplot as plt
-from new_res_symptoms_data import data
+from dataset import data
 
 # TensorBoard 
 ### TensorBoard 로그 저장 디렉토리 설정
@@ -58,6 +58,8 @@ num_words = len(word_index) + 1
 max_length = max(len(seq) for seq in symptoms)
 padded_symptoms = pad_sequences(encoded_symptoms, maxlen=max_length, padding='post')
 print("MAX_LEN: ", max_length)
+with open("max_length.txt", 'wb') as f:
+    f.write(str(max_length).encode())
 
 
 # 응급 정도 레이블 전처리
@@ -79,7 +81,7 @@ hidden_unit = 128 # hidden layer: 조정 대상
 model = Sequential()
 model.add(Embedding(num_words, embedding_dim, input_length=max_length))
 model.add(LSTM(hidden_unit))
-model.add(Dropout(0.5)) # dropout - 과적합 방지: 조정 대상
+model.add(Dropout(0.3)) # dropout - 과적합 방지: 조정 대상
 model.add(Dense(num_classes, activation='softmax'))
 
 
@@ -121,7 +123,7 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accur
 
 
 # 학습 (반복횟수:1000, 한번에 처리할 데이터 샘플:32)
-model.fit(X_train, y_train, epochs=500, batch_size=64, validation_data=(X_test, y_test), # epochs: 조정 대상
+model.fit(X_train, y_train, epochs=100, batch_size=64, validation_data=(X_test, y_test), # epochs: 조정 대상
           callbacks=[es, tensorboard_callback], verbose=1) # mc 추가
 
 
@@ -153,15 +155,16 @@ def emergency_level_prediction(sample_sentence):
     # 샘플 문장 응급도 예상
     prediction = model.predict(padded_sample)
     emergency_level = np.argmax(prediction, axis=1) + 1
-    print(f"응급도: {emergency_level[0]}")
+    confidence = prediction[0][emergency_level[0]-1] # 각 클래스의 확률 중에서 선택된 클래스의 확률
+    print(f"응급도: {emergency_level[0]}, 확신도: {confidence * 100.0}%")
 
 
 # 예시 문장
-emergency_level_prediction("지금 환자는 흉부나 목에 찰과상이 있어서, 호흡이 어려운 상황입니다.") # 1
-emergency_level_prediction("지금 환자가 숨을 들이마실 때 산소 부족때문에 어지러워하고 있습니다") # 2
-emergency_level_prediction("피부 발진이랑 기침, 숨 가쁨, 목에 불편감.") # 3
-emergency_level_prediction("환자는 코막힘과 비염으로 인해 숨쉬기 어려워하고 있음") # 4
-emergency_level_prediction("숨을 들이마실 때 약간의 힘들어하고 있다.") # 5
+emergency_level_prediction("지금 환자는 아주 위험한 무호흡 상태입니다.") # 1
+emergency_level_prediction("지금 환자가 패혈증으로 인해 고통을 호소하고 있습니다.") # 2
+emergency_level_prediction("절단으로 인한 출혈.") # 3
+emergency_level_prediction("환자는 국소성 염증으로 인해 구급차 탑승") # 4
+emergency_level_prediction("감기와 장염 증상이 복합적으로 일어나고 있음.") # 5
 
 # 모델 저장
 model.save('rnn_codeblue_model.h5')
