@@ -70,7 +70,7 @@ X_train, X_test, y_train, y_test = train_test_split(padded_symptoms, encoded_lab
 
 
 # 기존 모델 불러오기
-model = load_model('rnn_model.h5')
+model = load_model('rnn_model_v1.h5')
 
 
 # 학습률 스케줄링 함수 정의 (100번동안은 학습률 유지 후 0.1씩 감소 -> 초기학습은 빠르게)
@@ -166,4 +166,4 @@ emergency_level_prediction("설사로 인한 복통과 탈수 증상") # 5
 emergency_level_prediction("부종으로 인해 움직임의 어려움을 느끼고 있는 환자가 탑승 중입니다.")
 
 # 모델 저장
-model.save('rnn_cumulated_model.h5')
+model.save('rnn_cumulated_model_v2.h5')
