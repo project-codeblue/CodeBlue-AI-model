@@ -19,11 +19,13 @@ vectors_ngrams_path = "yongjae_word/model/fasttext.model.wv.vectors_ngrams.npy"
 
 def preprocess(text):
     line = re.compile('[^가-힣]').sub(' ', text)
-    token_text = okt.morphs(line)
-    stopWords_removed_texts = [word for word in token_text if not word in stop_words]
+    # token_text = okt.morphs(line)
+    # stopWords_removed_texts = [word for word in token_text if not word in stop_words]
+    stopWords_removed_texts = [word for word in line.split() if not word in stop_words]
+    print("전처리 텍스트 ==",stopWords_removed_texts)
+
     compoundWords_removed_texts = [word for word in stopWords_removed_texts if not word in compound_words]
 
-    print("전처리 텍스트 ==",compoundWords_removed_texts)
     return compoundWords_removed_texts
 
 def get_symptom_score(keywords, fasttext_model):
@@ -45,21 +47,18 @@ def get_symptom_score(keywords, fasttext_model):
                     current_category = category
                     current_score = score
 
-        if max_similarity >= 0.988:
+        if max_similarity >= 0.98:
             input_category_counts[current_category] += 1
-            if input_category_counts[current_category] >= 2:
-                additional_score = 2 * sum(input_category_counts.values())
             total_score += current_score
-        else:
-            additional_score = 0
-
+        
         print(f"키워드: {word}, 매칭 증상: {max_similar_symptom}, 점수: {current_score}, 유사도: {max_similarity}")
-    
+
+    additional_score = sum([2 * count for count in input_category_counts.values() if count > 1])
     total_score += additional_score
     return total_score
 
 def main():
-    fasttext_model = FastText.load(model_path)
+    fasttext_model = FastText.load(model_path, mmap='r')
 
     input_sentence = input("증상을 입력하세요: ")
 

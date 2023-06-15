@@ -23,23 +23,24 @@ def preprocess(data):
     ReToken_texts = []
     for line in data:
         line = re.compile('[^가-힣]').sub(' ', line)
-        token_text = okt.morphs(line)
-        stopWords_removed_texts = [word for word in token_text if not word in stop_words]
-        compoundWords_removed_texts = [word for word in stopWords_removed_texts if not word in compound_words]
+        # token_text = okt.morphs(line)
+        tokenized_texts = [word for word in line.split() if not word in stop_words]
+        stopWords_removed_texts = [word for word in tokenized_texts if not word in stop_words]
+        # compoundWords_removed_texts = [word for word in stopWords_removed_texts if not word in compound_words]
         # print("전처리 완료==>",compoundWords_removed_texts)
-        if compoundWords_removed_texts:
-             ReToken_texts.append(compoundWords_removed_texts)
+        if stopWords_removed_texts:
+             ReToken_texts.append(stopWords_removed_texts)
     return ReToken_texts
 
 #모델 초기화 & 초기 학습용
 def train_fasttext_model(texts):
     print("-" * 20)
     print("학습 시작")
-    model = FastText(vector_size=100, window=5, min_count=6, workers=4, sg=1)
+    model = FastText(vector_size=100, window=4, min_count=4, workers=4, sg=1)
 
     model.build_vocab(texts)
 
-    with tqdm(total=1500) as pbar:
+    with tqdm(total=1000) as pbar:
         for epoch in range(1000):
             model.train(texts, total_examples=len(texts), epochs=1)
             model.alpha -= 0.001
@@ -58,13 +59,13 @@ def update_fasttext_model(texts):
     print("학습 업데이트 시작")
 
     model = FastText.load(model_path)
-    model.window = 5
-    model.min_count = 6
+    model.window = 4
+    model.min_count = 5
     model.workers = 4
     model.build_vocab(texts, update=True)
     model.train(texts, total_examples=model.corpus_count, epochs=1000)
 
-    with tqdm(range(1500)) as pbar:
+    with tqdm(range(500)) as pbar:
         for epoch in pbar:
             model.train(texts, total_examples=model.corpus_count, epochs=1)
             model.alpha -= 0.001
@@ -103,16 +104,16 @@ def main():
     print(f"읽은 행 수: {len(data)}")
 
     ReToken_texts = preprocess(data)
-    # train_fasttext_model(ReToken_texts) ##새학습
+    train_fasttext_model(ReToken_texts) ##새학습
     # if not os.path.exists(model_path):
     #     train_fasttext_model(ReToken_texts)
     # else:
-    update_fasttext_model(ReToken_texts) ##누적학습
+    # update_fasttext_model(ReToken_texts) ##누적학습
 
     # model = KeyedVectors.load(model_path) #삭제해도될지도?
     # model.wv.vectors_ngrams = np.load(vectors_ngrams_path, allow_pickle=False) #삭제해도될지도?
     # visualize_similarity(model)
 
-#스위치
+# # 스위치
 # if __name__ == '__main__':
-#         main()
+#         main() 
