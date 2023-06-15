@@ -157,13 +157,13 @@ def emergency_level_prediction(sample_sentence):
 emergency_level_prediction("응급환자는 심장마비로 인해 의식을 잃고 쓰러졌습니다. 호흡 곤란 상태입니다.") # 1
 emergency_level_prediction("환자는 현재 쇼크로 인한 무의식 상태입니다. 바로 응급실로 이동해야하는 위급상황입니다.")
 emergency_level_prediction("지금 환자의 혈액 순환이 장애가 생겼습니다. 환자는 혈류가 약해져 무기력한 상태입니다.") # 2
-emergency_level_prediction("환자는 뇌출혈로 인한 뇌졸중으로 판단됌. 응급실로 이동중.") # 1
+emergency_level_prediction("환자는 뇌출혈로 인한 뇌졸중으로 판단됌. 응급실로 이동중.") 
 emergency_level_prediction("환자의 맥박수가 매우 높은것으로 판단됌. 정상적인 맥박이 아님") # 3
 emergency_level_prediction("환자는 흑색변과 탈수 증세를 보임") 
 emergency_level_prediction("배뇨 장애를 가진 환자가 탑승. 요로감염으로 의심됌") # 4
-emergency_level_prediction("유해물질을 먹은 것 같은데 큰 증상을 보이지 않지만 응급실로 이동중") # 5
+emergency_level_prediction("유해물질을 먹은 것 같은데 큰 증상을 보이지 않지만 응급실로 이동중") 
 emergency_level_prediction("설사로 인한 복통과 탈수 증상") # 5
 emergency_level_prediction("부종으로 인해 움직임의 어려움을 느끼고 있는 환자가 탑승 중입니다.")
 
-# # 모델 저장
-# model.save('rnn_model.h5')
+# 모델 저장
+model.save('rnn_cumulated_model.h5')
