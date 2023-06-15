@@ -40,7 +40,7 @@ def emergency_level_prediction(sample_sentence):
 
 
 # 예시 문장
-emergency_level_prediction("응급환자는 심장마비로 인해 의식을 잃고 쓰러졌습니다. 호흡 곤란 상태입니다.") # 1
+emergency_level_prediction("의식이 없으며, 심부전증도 심하고, 뇌경색 증상도 보이며, 사지마비까지 있음, 계속되는 발작으로 혼란상태 유지됨, 심지어 청각손실과 가슴통증까지 있음") # 1
 emergency_level_prediction("지금 환자의 혈액 순환이 장애가 생겼습니다. 환자는 혈류가 약해져 무기력한 상태입니다.") # 2
 emergency_level_prediction("환자의 맥박수가 매우 높은것으로 판단됌. 정상적인 맥박이 아님") # 3
 emergency_level_prediction("배뇨 장애를 가진 환자가 탑승. 요로감염으로 의심됌") # 4
