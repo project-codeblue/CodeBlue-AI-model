@@ -4,7 +4,7 @@ from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.callbacks import Callback, ModelCheckpoint
+from tensorflow.keras.callbacks import Callback, ModelCheckpoint, LearningRateScheduler
 from tensorflow.keras import regularizers
 from tensorflow.keras.callbacks import TensorBoard
 import numpy as np
@@ -33,8 +33,9 @@ data = [item for item in data if item[0] not in seen_values and not seen_values.
 symptoms_before_tuning, labels = zip(*data)
 print("TOTAL_DATASET: ", len(symptoms_before_tuning))
 
+
 # 토큰화
-stopwords = [',','.','의','로','을','가','이','은','들','는','성','좀','잘','걍','과','고','도','되','되어','되다','를','으로','자','에','와','한','합니다','니다','하다','임','음','환자','응급','상황','상태','증상','증세','구조']
+stopwords = [',','.','의','로','을','가','이','은','들','는','성','좀','잘','걍','과','고','도','되','되어','되다','를','으로','자','에','와','한','합니다','니다','하다','임','음','환자','응급','상황','상태','증상','증세','구조','구급차','구급','응급환자','구급대','구급대원','구급대원들']
 okt = Okt()
 
 ### 토크나이저 저장 경로
@@ -54,8 +55,9 @@ encoded_symptoms = tokenizer.texts_to_sequences(symptoms)
 word_index = tokenizer.word_index
 num_words = len(word_index) + 1
 
+
 # 패딩
-max_length = max(len(seq) for seq in symptoms)
+max_length = max(len(seq) for seq in encoded_symptoms)
 padded_symptoms = pad_sequences(encoded_symptoms, maxlen=max_length, padding='post')
 print("MAX_LEN: ", max_length)
 with open("max_length.txt", 'wb') as f:
@@ -85,6 +87,17 @@ model.add(Dropout(0.3)) # dropout - 과적합 방지: 조정 대상
 model.add(Dense(num_classes, activation='softmax'))
 
 
+# 학습률 스케줄링 함수 정의 (100번동안은 학습률 유지 후 0.1씩 감소 -> 초기학습은 빠르게)
+def lr_scheduler(epoch, lr):
+    if epoch < 1000:
+        return lr
+    else:
+        return lr * 0.1 # learning rate: 조정 대상
+
+### 학습률 스케줄링 콜백 정의
+lr_scheduler_callback = LearningRateScheduler(lr_scheduler)
+
+# 조기종료 함수 정의
 class CustomEarlyStopping(Callback):
     def __init__(self, accuracy_threshold=0.95, patience=30):
         super(CustomEarlyStopping, self).__init__()
@@ -115,7 +128,7 @@ class CustomEarlyStopping(Callback):
                 self.wait += 1
 
 # 조기 종료 콜백 정의 (10번동안 검증손실이 개선되지 않으면 조기종료)
-es = CustomEarlyStopping(accuracy_threshold=0.95, patience=30)
+early_stopping_callback = CustomEarlyStopping(accuracy_threshold=0.95, patience=30)
 
 
 # 모델 컴파일 (알고리즘:adam, 손실함수:categorical_crossentropy, 평가지표:accuracy)
@@ -124,15 +137,15 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accur
 
 # 학습 (반복횟수:1000, 한번에 처리할 데이터 샘플:32)
 model.fit(X_train, y_train, epochs=100, batch_size=64, validation_data=(X_test, y_test), # epochs: 조정 대상
-          callbacks=[es, tensorboard_callback], verbose=1) # mc 추가
+          callbacks=[early_stopping_callback, lr_scheduler_callback, tensorboard_callback], verbose=1) # mc 추가
 
 
 # 토크나이저 저장
 with open(tokenizer_path, 'wb') as f:
     pickle.dump(tokenizer, f)
 
+
 # 성능 평가
-# loaded_model = load_model('rnn_codeblue_model.h5')
 loss, accuracy = model.evaluate(X_test, y_test)
 print("테스트 손실:", loss)
 print("테스트 정확도:", accuracy)
@@ -167,4 +180,4 @@ emergency_level_prediction("환자는 국소성 염증으로 인해 구급차 �
 emergency_level_prediction("감기와 장염 증상이 복합적으로 일어나고 있음.") # 5
 
 # 모델 저장
-model.save('rnn_codeblue_model.h5')
+model.save('rnn_model_v1.h5')
