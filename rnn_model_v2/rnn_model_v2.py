@@ -1,16 +1,14 @@
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout
-from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras.models import Sequential
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.callbacks import Callback, ModelCheckpoint, LearningRateScheduler
-from tensorflow.keras import regularizers
+from tensorflow.keras.callbacks import Callback, LearningRateScheduler
 from tensorflow.keras.callbacks import TensorBoard
 import numpy as np
-import random, urllib.request, pandas as pd, pickle, re
+import random, pickle, re
 from konlpy.tag import Okt
-import matplotlib.pyplot as plt
 from dataset_third import data
 
 # TensorBoard 
