@@ -2,16 +2,12 @@
 # ↑상단의 주석 지우지 마세요. python이 읽는 주석입니다.
 
 from konlpy.tag import Okt
-from multiprocessing import freeze_support
 from gensim.models.fasttext import FastText
 import re
-from gensim.models import KeyedVectors
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from sklearn.manifold import TSNE
-from stop_word import stop_words,compound_words
-
+from stop_word import stop_words
 okt = Okt()
 
 #절대 경로 정리
@@ -97,7 +93,6 @@ def update_fasttext_model(texts):
 #     plt.show()
 
 def main():
-    freeze_support()
 
     with open(data_path, 'r', encoding='utf-8') as file:
         data = file.readlines()
