@@ -4,13 +4,12 @@
 #main 사용설명서
 #alt+g로 실행후 증상을 입력하세요. 증상 입력할때 제대로된 값을 확인하기 위해 본인이 적은 증상의 점수를 기억해주세요!
 
-import numpy as np
 import re
 from konlpy.tag import Okt
 from gensim.models import FastText
 from sub_word import get_severity_level,symptom_scores
 from scipy.spatial.distance import cosine
-from stop_word import stop_words,compound_words
+from stop_word import stop_words
 
 okt = Okt()
 
@@ -20,13 +19,10 @@ vectors_ngrams_path = "yongjae_word/model/fasttext.model.wv.vectors_ngrams.npy"
 def preprocess(text):
     line = re.compile('[^가-힣]').sub(' ', text)
     # token_text = okt.morphs(line)
-    # stopWords_removed_texts = [word for word in token_text if not word in stop_words]
     stopWords_removed_texts = [word for word in line.split() if not word in stop_words]
     print("전처리 텍스트 ==",stopWords_removed_texts)
 
-    compoundWords_removed_texts = [word for word in stopWords_removed_texts if not word in compound_words]
-
-    return compoundWords_removed_texts
+    return stopWords_removed_texts
 
 def get_symptom_score(keywords, fasttext_model):
     total_score = 0
